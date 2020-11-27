@@ -23,126 +23,6 @@ app.use(cors())
 
 
 
-
-const user={
-
-	name:'bright',
-	surname:'kaponda'
-
-   }
-
-
-  const database={
-     users: [{
-
-         id:"1",
-         displayName:"Bright kaponda",
-         phoneNumber:"0784428797",
-         email:"brightkaponda96@gmail.com",
-         accountType:"" , // 1 for admin 0 for ordinary user
-         joined:new Date()
-
-     }],
-
-      login: [{
-
-         id:"1",
-         phoneNumber:"0784428797",
-         email:"brightkaponda96@gmail.com",
-         password:"bright", 
-         loggedIn:"",// int 
-         numberofLoggedDevices:"" ,// int 
-         // 1 for admin 0 for ordinary user
-         joined:new Date()
-
-     }]
-     ,events:[{
-
-         id:"1",
-         userId:"",
-         description:"",
-         register:"",
-         edate:"",
-         day:"",
-         month:"",
-         year:"",
-         date:new Date()
-         
-     }],
-
-       finance:[{
-
-         id:"1",
-         userId:"",
-         name:"",
-         surname:"1",
-         phoneNumber:"",
-         amount:"",
-         purpose:"",
-         pay_method:"1",
-         income_payment:"",
-         date:new Date()
-
-     }],
-     history:[{
-
-         id:"1",
-         userId:"1",
-         description:"",
-         actionBy:"",
-         date:new Date()
-
-     }]
-     ,
-     following:[{
-
-         id:"1",
-         followee:"",
-         follower:"",
-         date:new Date()
-
-     }]
-     ,
-     audios:[{
-
-         id:"1",
-         userId:"",
-         audioUrl:"",
-         description:"",
-         date:new Date()
-
-     }]
-     ,
-     videos:[{
-
-         id:"1",
-         userId:"",
-         audioUrl:"",
-         description:"",
-         date:new Date()
-
-     }]
-
-      ,
-     members:[{
-
-         id:"1",
-         name:"",
-         surname:"",
-         ageCategory:"",
-         phoneNumber:"",
-         email:"",
-         houseNumberlocation:"",
-         workStatus:"",
-         maritalStatus:"",
-         date:new Date()
-
-     }]
-
-}
-
-
-
 app.get("/",(req,res)=>{
 
 
@@ -194,12 +74,12 @@ if (email==="" ||phoneNumber===""||password==="") {
   
   }).then(response=>{
 
-       res.json("success")
-
-
 
         db.select('*').from('users').where('id','=',response[0]).then(data=>{
-        console.log(data[0])
+    
+
+
+       res.json(response[0])
         
         
     })
@@ -233,8 +113,6 @@ const {email,password}=req.body
      db.select('*').from('login').where('email','=',email).andWhere('password','=',password).then(data=>{
 
 
-       console.log(data)
-
        if (data.length===0) {
 
          res.json("not found")
@@ -251,15 +129,14 @@ const {email,password}=req.body
 })
 
 
-
 //update user profile
 app.post("/addEvent",(req,res)=>{
-	const {userId,description,register,eventDate,userId}=req.body
+	const {userId,description,register,eventDate}=req.body
 
 	if (userId===""|| description===""||register==="") {
 		res.send("cannot update user")
 
-	} else {
+	    } else {
 
 
         db('events').insert({
@@ -272,7 +149,14 @@ app.post("/addEvent",(req,res)=>{
 
         }).then(result=>{
 
-            res.json(result)
+          if(result.length===0){
+
+
+          }else{
+
+             res.json(result)
+          }
+
 
         }).catch(err=>res.json(err))
 
@@ -319,14 +203,16 @@ app.post("/addFinance",(req,res)=>{
 
        const {name,surname,phoneNumber,amount,purpose,paymentMethod,income_payment,record_date,userId} =req.body 
 
-       if (phoneNumber==="") {
+       if (name==="" || surname===""||amount==="") {
 
-	      res.send("receipt")
+	      res.send("some fields are empty")
 
        } else {
 
         db('finance').insert({
 
+
+         userId:userId,
          name:name,
          surname:surname,
          phoneNumber:phoneNumber,
@@ -338,10 +224,19 @@ app.post("/addFinance",(req,res)=>{
          date:new Date()
 
         }).then(result=>{
+          console.log(new Date())
+
+            if(result.length===0){
+
+              res.json("")
+            }else{
 
             res.json(result)
 
-        }).catch(err=>res.json(err))
+            }
+           
+
+        }).catch(err=>res.json("failed to insert data"))
        }
 
        
@@ -351,32 +246,22 @@ app.post("/addFinance",(req,res)=>{
 
 
 //get user receipts from database
-app.get("/getFinance",(req,res)=>{
+app.get("/getFinance/:id",(req,res)=>{
 
-       // 6 digit pin
+       const {id} =req.params 
+     
+       if (id==="") {
 
-       const {phoneNumber,pin,userId} =req.body 
-
-       if (phoneNumber===""|| pin==="") {
-
-          res.send("receipt")
+          res.send("could not retrieve data ")
 
        } else {
 
-         //   fetch("http:localhost:3001/generateReceipt")
-         //   .then(result=>{
-           //     result.json()
-            //}).then( r=>console.log());
-
-             return db.select('*').from('finance').then(data=>{
+             return db.select('*').from('finance').where("userId","=",id).then(data=>{
 
              res.json(data)
 
-             }).catch(err=>res.json(err))
-
+             }).catch(err=>res.json("failed to retrieve data"))
        }
-
-       
 
 })
 
@@ -385,19 +270,30 @@ app.post("/getFinanceByDate",(req,res)=>{
 
        // 6 digit pin
 
-       const {start,end,userId} =req.body 
+       const {start,end,input,userId} =req.body 
 
-    
 
-             return db.select('*').from('finance').whereBetween("record_date",[start,end]).then(data=>{
+       if (input==="") {
 
-             res.json(data)
+       return db.select('*').from('finance').whereBetween("record_date",[start,end]).andWhere("userId","=",userId).then(data=>{
 
-             console.log(data)
+       res.json(data)
 
-             }).catch(err=>res.json(err))
+       }).catch(err=>res.json(err)) 
 
-           
+       }else{
+
+
+      return db.select('*').from('finance').whereBetween("record_date",[start,end]).andWhere("name","like",`%${input}%`)
+      .orWhere("surname","like",`%${input}%`)
+      .orWhere("purpose","like",`%${input}%`).orWhere("paymentMethod","like",`%${input}%`).orWhere("phoneNumber","like",`%${input}%`).andWhere("userId","=",userId).then(data=>{
+
+       res.json(data)
+
+       }).catch(err=>res.json(err)) 
+
+
+       }
 
 })
 
@@ -407,23 +303,25 @@ app.post("/getFinanceByDescription",(req,res)=>{
 
        // 6 digit pin
 
-       const {input,userId} =req.body 
+             const {input,userId} =req.body 
 
-    
-
-             return db.select('*').from('finance').where("name","like",`%${input}%`).then(data=>{
+             return db.select('*').from('finance').where("name","like",`%${input}%`).andWhere("userId","=",userId).then(data=>{
 
              res.json(data)
 
-             console.log(data)
 
              }).catch(err=>res.json(err))
-
-           
 
 })
 
 
+app.put("/updateFinance",(req,res)=>{
+
+
+    const {userId} =req.body
+    res.json(`its working ${userId}`)
+
+})
 
 app.post("/getMemberByDescription",(req,res)=>{
 
@@ -432,11 +330,9 @@ app.post("/getMemberByDescription",(req,res)=>{
             const {input,userId} =req.body 
 
 
-             return db.select('*').from('members').where("name","like",`%${input}%`).then(data=>{
+             return db.select('*').from('members').where("name","like",`%${input}%`).andWhere("userId","=",userId).then(data=>{
 
              res.json(data)
-
-             console.log(data)
 
              }).catch(err=>res.json(err))
              
@@ -451,8 +347,8 @@ app.post("/addMember",(req,res)=>{
         
     const {name, surname,ageCategory,phoneNumber,email, location,occupation,maritalStatus,userId} =req.body
 
-     if (name===""||surname==="") {
-	    res.send("receipt cannot be genarated")
+     if (name===""||surname===""||userId==="") {
+	    res.send("name or email is empty")
      } else {
 
 	   db('members').insert({
@@ -464,6 +360,7 @@ app.post("/addMember",(req,res)=>{
          email:email,
          location:location,
          occupation:occupation,
+         userId:userId,
          date:new Date()
               
 
@@ -476,31 +373,21 @@ app.post("/addMember",(req,res)=>{
 
 })
 
-
-
-
-//create a new receipt 
-app.get("/getMembers",(req,res)=>{
+ 
+app.get("/getMembers/:id",(req,res)=>{
         
-    const {userId, phoneNumber,receiptNumber,descr_items, amount, pay_method,tax} =req.body
+         const {id} =req.params
+    
+        db.select('*').from('members').where("userId","=",id).then(data=>{
 
-     if (userId===""||phoneNumber===""||amount===""||pay_method==="") {
-        res.send("cannot process")
-     } else {
-       return db.select('*').from('members').then(data=>{
-
-        res.json(data)
+        return res.json(data)
 
         }).catch(err=>res.json(err))
-     }
-
-
-
+    
 })
 
 
 
-//update user profile
 app.post("/addAudio",(req,res)=>{
     const {userId,description,audioUrl}=req.body
 
@@ -535,7 +422,7 @@ app.post("/addAudio",(req,res)=>{
 app.get("/getAudios",(req,res)=>{
     const {id,userId,description,audioUrl}=req.body
 
-    if (id===""|| address===""||country==="") {
+    if (id==="") {
         res.send("cannot update user")
 
     } else {
@@ -552,7 +439,7 @@ app.get("/getAudios",(req,res)=>{
 })
 
 
-//update user profile
+//add new video
 app.post("/addVideo",(req,res)=>{
     const {userId,description,videoUrl}=req.body
 
@@ -568,7 +455,7 @@ app.post("/addVideo",(req,res)=>{
            videoUrl:videoUrl,
            date:new Date()
 
-        }).then(result=>{
+        }).Where("id","=",userId).then(result=>{
 
             res.json(result)
 
@@ -686,7 +573,7 @@ app.get("/history",(req,res)=>{
 
 // give users rights to use your id and profile for the company bt u have the right to remove thm
 app.post("/companyright",(req,res)=>{
-	const {userId , rightsTo}
+	const {userId , rightsTo}=req.body
 
  return db.select('*').from('users').then(data=>{
 
