@@ -4,7 +4,7 @@ const express=require('express')
 const bodyparser=require('body-parser')
 const cors=require('cors')
 const knex=require('knex')
-//const bcrypt=require('bcrypt')
+const bcrypt=require('bcrypt')
 
 
 const db=knex({
@@ -231,18 +231,15 @@ app.post("/addFinance",(req,res)=>{
               res.json("")
             }else{
 
-            res.json(result)
+              res.json(result)
 
             }
            
 
         }).catch(err=>res.json("failed to insert data"))
-       }
-
-       
+       }   
 
 })
-
 
 
 //get user receipts from database
@@ -303,25 +300,68 @@ app.post("/getFinanceByDescription",(req,res)=>{
 
        // 6 digit pin
 
-             const {input,userId} =req.body 
+     const {input,userId} =req.body 
 
-             return db.select('*').from('finance').where("name","like",`%${input}%`).andWhere("userId","=",userId).then(data=>{
+     return db.select('*').from('finance').where("name","like",`%${input}%`).andWhere("userId","=",userId).then(data=>{
 
-             res.json(data)
+     res.json(data)
 
 
-             }).catch(err=>res.json(err))
+     }).catch(err=>res.json(err))
 
 })
 
 
 app.put("/updateFinance",(req,res)=>{
 
+   const {id,name,surname,phoneNumber,amount,purpose,paymentMethod,income_payment,record_date,userId} =req.body 
+   
+    db("finance").where("id","=",id).andWhere("userId","=",userId).update({
 
-    const {userId} =req.body
-    res.json(`its working ${userId}`)
+         userId:userId,
+         name:name,
+         surname:surname,
+         phoneNumber:phoneNumber,
+         amount:amount,
+         purpose:purpose,
+         paymentMethod:paymentMethod,
+         income_payment:income_payment,
+         record_date:record_date
+
+    }).then(response=>{
+
+      console.log(response)
+
+       //res.json(`its working ${userId}`)
+
+    })
 
 })
+
+
+
+app.delete("/deleteFinance",(req,res)=>{
+
+  const {id}=req.body
+
+   db("finance")
+  .where("id","=",id)
+  .del().then(response=>{
+
+    res.json(response)
+
+   console.log(response)
+
+  }).
+  catch(err=>{
+    console.log(err)
+  });
+
+
+})
+
+
+
 
 app.post("/getMemberByDescription",(req,res)=>{
 
@@ -335,9 +375,7 @@ app.post("/getMemberByDescription",(req,res)=>{
              res.json(data)
 
              }).catch(err=>res.json(err))
-             
-   
-
+            
 })
 
 
